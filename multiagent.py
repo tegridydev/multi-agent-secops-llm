@@ -1,6 +1,7 @@
 import os
 import requests
 import json
+import argparse
 
 # Configuration
 API_KEY = "your-api-key"  # Replace 'your-api-key' with your actual API key
@@ -103,18 +104,9 @@ def read_data_from_file(file_path):
     """Read data from a given file path."""
     try:
         with open(file_path, 'r') as file:
-            if file_path.endswith('.json'):
-                return json.load(file)
-            elif file_path.endswith('.txt'):
-                return file.read()
-            else:
-                print(f"Unsupported file type: {file_path}")
-                return None
+            return file.read()
     except FileNotFoundError:
         print(f"File not found: {file_path}")
-        return None
-    except json.JSONDecodeError:
-        print(f"Error decoding JSON from the file: {file_path}")
         return None
 
 def collect_data_from_folder(folder_path):
@@ -127,30 +119,46 @@ def collect_data_from_folder(folder_path):
     }
     for root, _, files in os.walk(folder_path):
         for file in files:
-            file_path = os.path.join(root, file)
-            data = read_data_from_file(file_path)
-            if data:
-                if "threat" in file.lower():
-                    collected_data["threat_data"] += data if isinstance(data, str) else json.dumps(data)
-                elif "log" in file.lower():
-                    collected_data["log_data"] += data if isinstance(data, str) else json.dumps(data)
-                elif "vuln" in file.lower():
-                    collected_data["vuln_data"] += data if isinstance(data, str) else json.dumps(data)
-                elif "incident" in file.lower():
-                    collected_data["incident_data"] += data if isinstance(data, str) else json.dumps(data)
+            if file.endswith('.txt'):
+                file_path = os.path.join(root, file)
+                data = read_data_from_file(file_path)
+                if data:
+                    if "threat" in file.lower():
+                        collected_data["threat_data"] += data.strip() + "\n"
+                    elif "log" in file.lower():
+                        collected_data["log_data"] += data.strip() + "\n"
+                    elif "vuln" in file.lower():
+                        collected_data["vuln_data"] += data.strip() + "\n"
+                    elif "incident" in file.lower():
+                        collected_data["incident_data"] += data.strip() + "\n"
     return collected_data
 
 def main():
     """Main function to run the security framework."""
-    collected_data = collect_data_from_folder(DATAOPS_FOLDER)
+    parser = argparse.ArgumentParser(description="Security Framework using Multi-Agent LLMs")
+    parser.add_argument("file", nargs="?", help="Optional specific .txt file to analyze")
+    args = parser.parse_args()
 
-    threat_data = collected_data["threat_data"].strip() or "No threat data provided."
-    log_data = collected_data["log_data"].strip() or "No log data provided."
-    vuln_data = collected_data["vuln_data"].strip() or "No vulnerability data provided."
-    incident_data = collected_data["incident_data"].strip() or "No incident data provided."
+    if args.file:
+        # If a specific file is provided, use it for analysis
+        file_path = args.file
+        data = read_data_from_file(file_path)
+        if data:
+            security_brief = generate_security_brief(data, data, data, data)
+            print(security_brief)
+        else:
+            print("Failed to read data from the provided file.")
+    else:
+        # If no specific file is provided, analyze all files in the dataops folder
+        collected_data = collect_data_from_folder(DATAOPS_FOLDER)
+        
+        threat_data = collected_data["threat_data"].strip() or "No threat data provided."
+        log_data = collected_data["log_data"].strip() or "No log data provided."
+        vuln_data = collected_data["vuln_data"].strip() or "No vulnerability data provided."
+        incident_data = collected_data["incident_data"].strip() or "No incident data provided."
 
-    security_brief = generate_security_brief(threat_data, log_data, vuln_data, incident_data)
-    print(security_brief)
+        security_brief = generate_security_brief(threat_data, log_data, vuln_data, incident_data)
+        print(security_brief)
 
 if __name__ == "__main__":
     main()
