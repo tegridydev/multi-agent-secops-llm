@@ -10,7 +10,8 @@ AGENT_MODEL_IDS = {
     "threat_intelligence": "phi3",
     "log_analysis": "phi3",
     "vulnerability_assessment": "phi3",
-    "incident_response": "phi3"
+    "incident_response": "phi3",
+    "overseer": "phi3"
 }
 TOGETHER_API_ENDPOINT = 'https://api.together.xyz/inference'
 OLLAMA_API_ENDPOINT = 'http://localhost:11434/api/generate'
@@ -20,6 +21,7 @@ HEADERS = {
 }
 USE_OLLAMA = True  # Set this to False to use Together API
 DATAOPS_FOLDER = "dataops"
+OUTPUT_FILE = "final_summary_brief.txt"
 
 def api_call(model_id, prompt, max_tokens):
     """Call the appropriate API to generate text based on the model ID and prompt."""
@@ -80,12 +82,26 @@ def incident_response(data):
     response = api_call(AGENT_MODEL_IDS["incident_response"], prompt, 300)
     return response.get('output', {}).get('choices', [{}])[0].get('text', "Error: Response does not contain 'text' key.")
 
+def overseer_summary(threat_summary, log_summary, vuln_summary, incident_summary):
+    """Generate a final summary brief using the Overseer agent."""
+    prompt = (
+        f"Generate a final summary brief based on the following summaries:\n\n"
+        f"Threat Intelligence Summary:\n{threat_summary}\n\n"
+        f"Log Analysis Summary:\n{log_summary}\n\n"
+        f"Vulnerability Assessment Summary:\n{vuln_summary}\n\n"
+        f"Incident Response Summary:\n{incident_summary}\n"
+    )
+    response = api_call(AGENT_MODEL_IDS["overseer"], prompt, 500)
+    return response.get('output', {}).get('choices', [{}])[0].get('text', "Error: Response does not contain 'text' key.")
+
 def generate_security_brief(threat_data, log_data, vuln_data, incident_data):
     """Generate a comprehensive security brief."""
     threat_summary = threat_intelligence_analysis(threat_data)
     log_summary = log_analysis(log_data)
     vuln_summary = vulnerability_assessment(vuln_data)
     incident_summary = incident_response(incident_data)
+
+    overseer_output = overseer_summary(threat_summary, log_summary, vuln_summary, incident_summary)
 
     brief = (
         "Security Brief:\n\n"
@@ -96,9 +112,11 @@ def generate_security_brief(threat_data, log_data, vuln_data, incident_data):
         "Vulnerability Assessment Summary:\n"
         f"{vuln_summary}\n\n"
         "Incident Response Summary:\n"
-        f"{incident_summary}\n"
+        f"{incident_summary}\n\n"
+        "Final Summary Brief:\n"
+        f"{overseer_output}\n"
     )
-    return brief
+    return brief, overseer_output
 
 def read_data_from_file(file_path):
     """Read data from a given file path."""
@@ -144,8 +162,10 @@ def main():
         file_path = args.file
         data = read_data_from_file(file_path)
         if data:
-            security_brief = generate_security_brief(data, data, data, data)
-            print(security_brief)
+            brief, overseer_output = generate_security_brief(data, data, data, data)
+            print(brief)
+            with open(OUTPUT_FILE, 'w') as f:
+                f.write(overseer_output)
         else:
             print("Failed to read data from the provided file.")
     else:
@@ -157,8 +177,10 @@ def main():
         vuln_data = collected_data["vuln_data"].strip() or "No vulnerability data provided."
         incident_data = collected_data["incident_data"].strip() or "No incident data provided."
 
-        security_brief = generate_security_brief(threat_data, log_data, vuln_data, incident_data)
-        print(security_brief)
+        brief, overseer_output = generate_security_brief(threat_data, log_data, vuln_data, incident_data)
+        print(brief)
+        with open(OUTPUT_FILE, 'w') as f:
+            f.write(overseer_output)
 
 if __name__ == "__main__":
     main()
