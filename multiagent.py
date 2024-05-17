@@ -144,10 +144,10 @@ def main():
     """Main function to run the security framework."""
     collected_data = collect_data_from_folder(DATAOPS_FOLDER)
 
-    threat_data = collected_data["threat_data"] or "No threat data provided."
-    log_data = collected_data["log_data"] or "No log data provided."
-    vuln_data = collected_data["vuln_data"] or "No vulnerability data provided."
-    incident_data = collected_data["incident_data"] or "No incident data provided."
+    threat_data = collected_data["threat_data"].strip() or "No threat data provided."
+    log_data = collected_data["log_data"].strip() or "No log data provided."
+    vuln_data = collected_data["vuln_data"].strip() or "No vulnerability data provided."
+    incident_data = collected_data["incident_data"].strip() or "No incident data provided."
 
     security_brief = generate_security_brief(threat_data, log_data, vuln_data, incident_data)
     print(security_brief)
