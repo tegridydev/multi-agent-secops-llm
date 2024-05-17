@@ -1,3 +1,4 @@
+import os
 import requests
 import json
 
@@ -5,29 +6,48 @@ import json
 API_KEY = "your-api-key"  # Replace 'your-api-key' with your actual API key
 APP_NAME = "Security Framework"
 AGENT_MODEL_IDS = {
-    "threat_intelligence": "YourThreatModelID",
-    "log_analysis": "YourLogModelID",
-    "vulnerability_assessment": "YourVulnModelID",
-    "incident_response": "YourIncidentModelID"
+    "threat_intelligence": "phi3",
+    "log_analysis": "phi3",
+    "vulnerability_assessment": "phi3",
+    "incident_response": "phi3"
 }
-API_ENDPOINT = 'https://api.example.com/inference'
+TOGETHER_API_ENDPOINT = 'https://api.together.xyz/inference'
+OLLAMA_API_ENDPOINT = 'http://localhost:11434/api/generate'
 HEADERS = {
     "Authorization": f"Bearer {API_KEY}",
     "User-Agent": APP_NAME
 }
-USE_LOCAL_LLM = False  # Set this to True to use local LLMs
+USE_OLLAMA = True  # Set this to False to use Together API
+DATAOPS_FOLDER = "dataops"
 
 def api_call(model_id, prompt, max_tokens):
     """Call the appropriate API to generate text based on the model ID and prompt."""
     data = {
         "model": model_id,
         "prompt": prompt,
-        "max_tokens": max_tokens
+        "top_p": 1,
+        "top_k": 40,
+        "temperature": 0.8,
+        "max_tokens": max_tokens,
+        "repetition_penalty": 1
     }
     try:
-        response = requests.post(API_ENDPOINT, json=data, headers=HEADERS)
-        response.raise_for_status()
-        return response.json()
+        if USE_OLLAMA:
+            response = requests.post(OLLAMA_API_ENDPOINT, json=data, stream=True)
+            response.raise_for_status()
+            
+            # Handle streaming response
+            response_text = ""
+            for line in response.iter_lines():
+                if line:
+                    json_line = json.loads(line.decode('utf-8'))
+                    response_text += json_line.get('response', '')
+
+            return {"output": {"choices": [{"text": response_text}]}}
+        else:
+            response = requests.post(TOGETHER_API_ENDPOINT, json=data, headers=HEADERS)
+            response.raise_for_status()
+            return response.json()
     except requests.RequestException as e:
         print(f"API call error: {e}")
         return {}
@@ -79,13 +99,55 @@ def generate_security_brief(threat_data, log_data, vuln_data, incident_data):
     )
     return brief
 
+def read_data_from_file(file_path):
+    """Read data from a given file path."""
+    try:
+        with open(file_path, 'r') as file:
+            if file_path.endswith('.json'):
+                return json.load(file)
+            elif file_path.endswith('.txt'):
+                return file.read()
+            else:
+                print(f"Unsupported file type: {file_path}")
+                return None
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+        return None
+    except json.JSONDecodeError:
+        print(f"Error decoding JSON from the file: {file_path}")
+        return None
+
+def collect_data_from_folder(folder_path):
+    """Collect data from all files in the specified folder."""
+    collected_data = {
+        "threat_data": "",
+        "log_data": "",
+        "vuln_data": "",
+        "incident_data": ""
+    }
+    for root, _, files in os.walk(folder_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            data = read_data_from_file(file_path)
+            if data:
+                if "threat" in file.lower():
+                    collected_data["threat_data"] += data if isinstance(data, str) else json.dumps(data)
+                elif "log" in file.lower():
+                    collected_data["log_data"] += data if isinstance(data, str) else json.dumps(data)
+                elif "vuln" in file.lower():
+                    collected_data["vuln_data"] += data if isinstance(data, str) else json.dumps(data)
+                elif "incident" in file.lower():
+                    collected_data["incident_data"] += data if isinstance(data, str) else json.dumps(data)
+    return collected_data
+
 def main():
     """Main function to run the security framework."""
-    # Example data
-    threat_data = "Example threat intelligence data..."
-    log_data = "Example log data..."
-    vuln_data = "Example vulnerability data..."
-    incident_data = "Example incident data..."
+    collected_data = collect_data_from_folder(DATAOPS_FOLDER)
+
+    threat_data = collected_data["threat_data"] or "No threat data provided."
+    log_data = collected_data["log_data"] or "No log data provided."
+    vuln_data = collected_data["vuln_data"] or "No vulnerability data provided."
+    incident_data = collected_data["incident_data"] or "No incident data provided."
 
     security_brief = generate_security_brief(threat_data, log_data, vuln_data, incident_data)
     print(security_brief)
