@@ -1,60 +1,46 @@
-# Multi-Agent Security Framework
+# MASOP · Multi Agent SecOps LLM
 
-This project is a multi-agent security framework that utilizes multiple LLM models to analyze and generate comprehensive security briefs. It leverages local LLM models via the Ollama API and can optionally use Together API. The framework reads `.txt` files from a specified directory or a specific file provided via command-line arguments and generates a final summary brief.
+Turn a folder or live feed into a queue of security findings you can trace back to the evidence. Start offline, then add your own models if you want help picking what to check first.
 
-## Features
+I put the original local LLM prototype on GitHub on **17 May 2024**. MASOP keeps the specialist roles and overseer and gives them a proper operator workflow.
 
-- **Threat Intelligence Analysis**: Analyzes threat intelligence data and provides a summary of key threats.
-- **Log Analysis**: Analyzes log data for anomalies and suspicious activities.
-- **Vulnerability Assessment**: Assesses vulnerabilities and provides a summary of critical vulnerabilities.
-- **Incident Response**: Evaluates incidents and recommends appropriate response actions.
-- **Overseer Summary**: Generates a final summary brief based on the outputs of the other agents.
-- **Output to File**: Saves the final summary brief to a `.txt` file.
+## Start here
 
-## Getting Started
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) if you don't have it. Extract the whole release or clone the repo, open a terminal in that folder and run:
 
-### Prerequisites
+```sh
+uv run masop.py
+```
 
-- Python 3
-- `requests` library (install via `pip install requests`)
+Press **Enter** for the offline demo. It needs no model, API key or Python packages. uv can provision a compatible Python interpreter if needed. If you already have Python 3.11 or later, `python3 masop.py` also works.
 
-### Setup
+| Menu | What it does |
+| --- | --- |
+| **1. Configure harness** | Check the setup, change thresholds and live intervals, audit pinned dependencies, or review queued cases. |
+| **2. Configure agents** | Discover models on a selected local server, save named local or hosted profiles, test them and assign analyst or reviewer roles. |
+| **3. Run static analysis** | Pick a directory. Find correlated events and common credential handling issues. Optionally export Markdown or JSON. |
+| **4. Launch live analysis** | Watch a directory for new or changed files, or poll one JSON telemetry endpoint. Press Ctrl+C to return to the menu. |
 
-1. Clone the repository:
-    ```sh
-    git clone https://github.com/tegridydev/multi-agent-secops-llm.git
-    cd multi-agent-secops-llm
-    ```
+## Use your own models
 
-2. Install the required Python packages:
-    ```sh
-    pip install requests
-    ```
+Start Ollama, LM Studio, llama.cpp or vLLM in its own app or terminal first. In MASOP, choose **Configure agents → Add or update a model profile → Local model server**. Accept the usual server URL or enter yours, let MASOP list the installed models, and assign the one you want. For hosted models pick a preset, enter the model ID, and supply its key from an environment variable or paste it into the masked session prompt. [Provider setup](docs/providers.md)
 
-3. Set your API key in the script:
-    ```python
-    API_KEY = "your-api-key"  # Replace 'your-api-key' with your actual API key
-    ```
+Assign profiles to general triage, identity, endpoint, vulnerability or reviewer roles. The rules always decide what lands in the queue. Models can only suggest a verification step from a fixed list. They see finding types, counts and time spans, without raw logs, filenames, IPs, user names or secret values. Hosted calls require explicit configuration and have a request cap. If a model fails, the offline results still work.
 
-### Running the Script
+## Run without the menu
 
-1. To analyze all `.txt` files in the `dataops` folder:
-    ```sh
-    python multiagent.py
-    ```
+```sh
+uv run masop.py check
+uv run masop.py scan ./examples --rules-only --report ./triage.json
+uv run masop.py live --directory ./incoming --poll 5
+uv run masop.py live --feed http://127.0.0.1:8080/alerts --rules-only
+uv run masop.py audit ./uv.lock
+```
 
-2. To analyze a specific `.txt` file:
-    ```sh
-    python multiagent.py dataops/sampledata.txt
-    ```
+Directory scans handle event JSONL, Wazuh alert exports and JSON records or arrays. Common text and config files get narrow local checks for possible private keys and hardcoded credentials. Other files are inventoried. It does not execute files, unpack archives, probe networks or act on an alert. [Input contract and coverage](docs/inputs.md)
 
-## How It Works
+The startup checks run offline and refuse unexpected runtime dependencies in the release metadata. MASOP installs no Python packages. The optional OSV audit queries known advisories for exact PyPI pins and never installs them. A clean result does not certify a package, operating system or Python interpreter. [Setup and operation](docs/operations.md) · [Security model](SECURITY.md)
 
-1. **Data Collection**: Reads and collects data from `.txt` files in the specified `dataops` folder or a specified file.
-2. **Agent Analysis**: Uses multiple LLM agents to analyze different aspects of the data:
-   - **Threat Intelligence Agent**: Analyzes threat intelligence data.
-   - **Log Analysis Agent**: Analyzes log data for anomalies.
-   - **Vulnerability Assessment Agent**: Assesses vulnerabilities.
-   - **Incident Response Agent**: Evaluates incidents and recommends response actions.
-3. **Overseer Agent**: Generates a final summary brief based on the outputs of the other agents.
-4. **Output to File**: Saves the final summary brief to `final_summary_brief.txt`.
+Run the tests with `python3 -m unittest discover -s tests -v`. The original `python3 multiagent.py` offline demo and batch CLI still work.
+
+[v0.3.1 live audit and how to repeat it](docs/audit-v0.3.1.md) · [Changelog](CHANGELOG.md) · MIT licensed.

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SecOps harness event-v1 record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "source", "asset", "timestamp", "kind"],
+  "properties": {
+    "event_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@-]{0,127}$"},
+    "source": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@-]{0,79}$"},
+    "asset": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@-]{0,79}$"},
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
+    },
+    "kind": {
+      "enum": ["auth_failure", "auth_success", "malware_alert", "vulnerability_alert", "security_alert"]
+    },
+    "severity": {"enum": ["info", "low", "medium", "high", "critical"], "default": "info"},
+    "principal": {"type": "string", "pattern": "^[A-Za-z0-9_][A-Za-z0-9._@\\\\$-]{0,79}$"},
+    "source_ip": {
+      "type": "string",
+      "maxLength": 45,
+      "not": {"pattern": "%"},
+      "anyOf": [{"format": "ipv4"}, {"format": "ipv6"}]
+    },
+    "cve": {"type": "string", "pattern": "^CVE-[0-9]{4}-[0-9]{4,19}$"}
+  },
+  "if": {"properties": {"kind": {"const": "vulnerability_alert"}}},
+  "then": {"required": ["cve"]},
+  "else": {"not": {"required": ["cve"]}}
+}

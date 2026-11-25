@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+.masop/
+.ruff_cache/
+.coverage
+build/
+dist/
+*.egg-info/
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+final_summary_brief.txt

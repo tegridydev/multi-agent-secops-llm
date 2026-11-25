@@ -1,0 +1,10 @@
+{"event_id":"auth-01","source":"identity-demo","asset":"vpn-gateway","timestamp":"2026-11-25T00:00:00Z","kind":"auth_failure","principal":"alex","source_ip":"192.0.2.44"}
+{"event_id":"auth-02","source":"identity-demo","asset":"vpn-gateway","timestamp":"2026-11-25T00:00:42Z","kind":"auth_failure","principal":"alex","source_ip":"192.0.2.44"}
+{"event_id":"auth-03","source":"identity-demo","asset":"vpn-gateway","timestamp":"2026-11-25T00:01:10Z","kind":"auth_failure","principal":"alex","source_ip":"192.0.2.44"}
+{"event_id":"auth-04","source":"identity-demo","asset":"vpn-gateway","timestamp":"2026-11-25T00:02:05Z","kind":"auth_failure","principal":"alex","source_ip":"192.0.2.44"}
+{"event_id":"auth-05","source":"identity-demo","asset":"vpn-gateway","timestamp":"2026-11-25T00:03:11Z","kind":"auth_failure","principal":"alex","source_ip":"192.0.2.44"}
+{"event_id":"auth-06","source":"identity-demo","asset":"vpn-gateway","timestamp":"2026-11-25T00:04:22Z","kind":"auth_success","principal":"alex","source_ip":"192.0.2.44"}
+{"event_id":"advisory-01","source":"inventory-demo","asset":"build-runner","timestamp":"2026-11-25T00:02:00Z","kind":"vulnerability_alert","severity":"high","cve":"CVE-2099-12345"}
+{"event_id":"endpoint-01","source":"endpoint-demo","asset":"workstation-07","timestamp":"2026-11-25T00:03:00Z","kind":"malware_alert","severity":"high"}
+{"event_id":"auth-normal","source":"identity-demo","asset":"vpn-gateway","timestamp":"2026-11-25T00:04:23Z","kind":"auth_success","principal":"sam","source_ip":"192.0.2.80"}
+{"event_id":"auth-06","source":"identity-demo","asset":"vpn-gateway","timestamp":"2026-11-25T00:04:22Z","kind":"auth_success","principal":"alex","source_ip":"192.0.2.44"}

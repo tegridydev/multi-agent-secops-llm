@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "multi-agent-secops-llm"
+description = "A local defensive SecOps harness with evidence-backed triage and optional model review"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "tegridydev"}]
+dependencies = []
+dynamic = ["version"]
+
+[project.scripts]
+secops-harness = "secops_harness.cli:main"
+masop = "secops_harness.menu:main"
+
+[project.urls]
+Repository = "https://github.com/tegridydev/multi-agent-secops-llm"
+Issues = "https://github.com/tegridydev/multi-agent-secops-llm/issues"
+
+[tool.setuptools]
+packages = ["secops_harness"]
+
+[tool.setuptools.dynamic]
+version = {attr = "secops_harness.__version__"}
+
+[tool.setuptools.package-data]
+secops_harness = ["fixtures/*.jsonl"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B", "UP", "SIM"]
